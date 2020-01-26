@@ -1,0 +1,36 @@
+---
+title: "Assignment1_ML"
+author: "Tanu"
+date: "1/26/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+```{r}
+bc_data = read_csv(file = "Data/dataR2.csv") %>% 
+  janitor::clean_names()
+```
+1. Construct a table providing summaries of the quantitative features of the dataset.
+Summaries should include the mean, median, minimum value, and maximum value. If
+you are unable to construct a formatted table within R, you can print raw output, but
+then comment the output to identify the answer that was requested.
+
+```{r}
+bc_data %>% 
+select(-classification) %>%   
+summary(bc_data) %>% 
+  knitr::kable(col.names = c("Age",
+                            "BMI",
+                            "Glucose",
+                            "Insulin",
+                            "Homa",
+                            "Leptin",
+                            "Adiponectin",
+                            "Resistin",
+                            "mcp_1"))
+```
+
