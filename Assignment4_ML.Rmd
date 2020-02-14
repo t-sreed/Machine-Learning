@@ -1,0 +1,137 @@
+---
+title: "Assignment 4"
+author: "Tanu Sreedharan TS3175"
+date: "2/12/2020"
+output:
+  word_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(dplyr)
+library(Amelia)
+library(caret)
+library(devtools)
+library(ggbiplot)
+library(stats)
+library(factoextra)
+library(cluster)
+```
+
+# Part 1: Implementing a Simple Prediction Pipeline 
+
+Fit and evaluate two prediction models using linear regression. The aim of the models are to predict the number of days in a month an individual reported having good physical health (feature name: healthydays).
+
+* Performing basic data cleaning.
+
+```{r, prepare data}
+physact <- read.csv("Data/class4_p1.csv") %>% 
+            drop_na() %>% 
+            janitor::clean_names()
+str(physact)
+```
+* Variable formats are all numeric
+
+* Partitioning data into training and testing (use a 70/30 split)
+```{r, partiton data}
+set.seed(200)
+train.indices<-createDataPartition(y=physact$healthydays,p=0.7,list=FALSE)
+
+training<-physact[train.indices,]
+testing<-physact[-train.indices,]
+```
+
+## 1. Fit two prediction linear regression models using  different subsets of the features in the training data
+
+* Model 1: Include habit how active participant is, BMI, and whether or not the participant is born outside of the united states
+* Model 2: Only include habit how active participant is
+
+```{r, create prediction model}
+model.1 <- lm(healthydays ~ habits5 + povertygroup + agegroup, data=training)
+summary(model.1)
+
+model.2<-lm(healthydays ~ agegroup + povertygroup, data=training)
+summary(model.2)
+
+```
+
+## 2. Apply models to test data
+
+* Model 1: Include how active participant is, BMI, and whether or not the participant is born outside of the united states
+* Model 2: Only include how active participant is
+
+```{r, apply models to test}
+model.1 <- lm(healthydays ~ habits5 + povertygroup + agegroup, data=testing)
+summary(model.1)
+
+model.2<-lm(healthydays ~ agegroup + povertygroup, data=testing)
+summary(model.2)
+
+```
+
+## 3. Describe one setting (in 1-2 sentences) where the implementation of your final model would be useful
+
+The final model (model 1) would ideal be predicting the number of headays in a month a person feels healthy based on their physical activity behaviors, age group, and income. The implementation of the results could be informing programs that work with young low-income people to implement a normal physical activity routine to ensure that people feel healthier. 
+
+# Part II: Conducting an Unsupervised Analysis
+
+Using the dataset from the Group assignment Part IIb (USArrests), identify clusters using hierarchical analysis.
+
+```{r, looking at data}
+colMeans(USArrests, na.rm=TRUE)
+
+usa.clean<- na.omit(USArrests) %>% 
+  scale()
+```
+ 
+ * 4. Vary the choice for agglomeration method.
++ For agglomeration method, use complete, average and single.
++ For distance, use Euclidian as our features are continuous and numerical.
+
+```{r}
+# Create Dissimilarity matrix
+diss.matrix <- dist(usa.clean, method = "euclidean")
+
+# Hierarchical clustering using Complete Linkage
+hc1 <- hclust(diss.matrix, method = "complete" )
+# Plot the obtained dendrograms
+plot(hc1, cex = 0.6, hang = -1)
+
+# Hierarchical clustering using Average Linkage
+hc2 <- hclust(diss.matrix, method = "average" )
+# Plot the obtained dendrograms
+plot(hc2, cex = 0.6, hang = -1)
+
+
+# Hierarchical clustering using Single Linkage
+hc3 <- hclust(diss.matrix, method = "single" )
+# Plot the obtained dendrograms
+plot(hc3, cex = 0.6, hang = -1)
+
+
+gap_stat <- clusGap(usa.clean, FUN = hcut, nstart = 25, K.max =10, B = 50)
+fviz_gap_stat(gap_stat)
+
+
+```
+ 
++ Determine the optimal number of clusters using a clear, data-driven strategy.
++ Describe the composition of each cluster in terms of the original input features
++ Do you see differences in results when you change the type of agglomeration method used?
+ 
+ For the complete linkage clustering, has 3 clear clusters. Two of them are about the same size but one is relatively large and it includes New York and New Jersey.   
+ 
+ For the average linkage clustering, the clusters are a little similar to the compkete linkage. There is just more overlapping of states.
+ 
+ For the single linkage clustering, there was a lot more overlapping and unclear distinction between the states besides Alaska, Florida, Califronia, and Nevada. 
+ 
+All three methods produced different clusters. Each one I did changed, starting with the largest clusters to smallest the clusters.
+ 
+Using the data-driven strategy of computing a gap statistic, the optimal number of clusters is 3.
+ 
+# 5. Pretend that the data are from 2020 and not 1973. Describe one research question that can be addressed using the newly identified clusters. HINT: The clusters can be used as an exposure, an outcome or a covariate.
+ 
+ Using the data above, we can assess high medium and low arrest clusters and investigate the reasons behind those arrests. It could lead to more informed policing tactics and more awarness of social determinants of health within the world of law and policy.
+ 
